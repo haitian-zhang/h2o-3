@@ -30,7 +30,7 @@ import static water.util.MRUtils.sampleFrameStratified;
 /**
  * Deep Learning Neural Net implementation based on MRTask
  */
-public class DeepLearning extends ModelBuilder<DeepLearningModel,DeepLearningModel.DeepLearningParameters,DeepLearningModel.DeepLearningModelOutput> {
+public class DeepLearning extends ModelBuilder<DeepLearningModel,DeepLearningModel.DeepLearningParameters,DeepLearningModel.DeepLearningModelOutput> implements CategoricalEncodingSupport {
   /** Main constructor from Deep Learning parameters */
   public DeepLearning( DeepLearningParameters parms ) { super(parms); init(false); }
   public DeepLearning( DeepLearningParameters parms, Key<DeepLearningModel> key ) { super(parms,key); init(false); }
@@ -67,6 +67,9 @@ public class DeepLearning extends ModelBuilder<DeepLearningModel,DeepLearningMod
    *  Validate the very large number of arguments in the DL Parameter directly. */
   @Override public void init(boolean expensive) {
     super.init(expensive);
+    if (!Arrays.stream(supportedCategoricalEncodingSchemes()).anyMatch(_parms._categorical_encoding::equals)) {
+      error("_categorical_encoding", _parms._categorical_encoding + " is not supported for Deep Learning.");
+    }
     _parms.validate(this, expensive);
     if (expensive && error_count() == 0) checkMemoryFootPrint();
   }
@@ -630,5 +633,16 @@ public class DeepLearning extends ModelBuilder<DeepLearningModel,DeepLearningMod
     }
     assert(tspi != 0 && tspi != -1 && tspi != -2 && tspi >= 1);
     return tspi;
+  }
+
+  public Model.Parameters.CategoricalEncodingScheme[] supportedCategoricalEncodingSchemes() {
+    return new Model.Parameters.CategoricalEncodingScheme[] {
+            Model.Parameters.CategoricalEncodingScheme.AUTO,
+            Model.Parameters.CategoricalEncodingScheme.OneHotInternal,
+            Model.Parameters.CategoricalEncodingScheme.Binary,
+            Model.Parameters.CategoricalEncodingScheme.Eigen,
+            Model.Parameters.CategoricalEncodingScheme.LabelEncoder,
+            Model.Parameters.CategoricalEncodingScheme.SortByResponse
+    };
   }
 }

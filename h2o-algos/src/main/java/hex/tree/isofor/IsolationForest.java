@@ -1,8 +1,6 @@
 package hex.tree.isofor;
 
-import hex.ModelCategory;
-import hex.ModelMetricsBinomial;
-import hex.ScoreKeeper;
+import hex.*;
 import hex.genmodel.utils.DistributionFamily;
 import hex.quantile.Quantile;
 import hex.tree.*;
@@ -30,7 +28,7 @@ import static hex.tree.isofor.IsolationForestModel.IsolationForestOutput;
 /**
  * Isolation Forest
  */
-public class IsolationForest extends SharedTree<IsolationForestModel, IsolationForestParameters, IsolationForestOutput> {
+public class IsolationForest extends SharedTree<IsolationForestModel, IsolationForestParameters, IsolationForestOutput> implements CategoricalEncodingSupport {
 
   @Override public ModelCategory[] can_build() {
     return new ModelCategory[]{
@@ -90,6 +88,9 @@ public class IsolationForest extends SharedTree<IsolationForestModel, IsolationF
         error("_stopping_metric", "Stopping metric `" + _parms._stopping_metric + 
                 "` can only be used when a labeled validation frame is provided.");
       }
+    }
+    if (!Arrays.stream(supportedCategoricalEncodingSchemes()).anyMatch(_parms._categorical_encoding::equals)) {
+      error("_categorical_encoding", _parms._categorical_encoding + " is not supported for Isolation Forest.");
     }
     if (expensive) {
       if (vresponse() != null) {
@@ -461,5 +462,17 @@ public class IsolationForest extends SharedTree<IsolationForestModel, IsolationF
     }
 
   }
-  
+
+  public Model.Parameters.CategoricalEncodingScheme[] supportedCategoricalEncodingSchemes() {
+    return new Model.Parameters.CategoricalEncodingScheme[] {
+            Model.Parameters.CategoricalEncodingScheme.AUTO,
+            Model.Parameters.CategoricalEncodingScheme.Enum,
+            Model.Parameters.CategoricalEncodingScheme.EnumLimited,
+            Model.Parameters.CategoricalEncodingScheme.OneHotExplicit,
+            Model.Parameters.CategoricalEncodingScheme.Binary,
+            Model.Parameters.CategoricalEncodingScheme.Eigen,
+            Model.Parameters.CategoricalEncodingScheme.LabelEncoder,
+            Model.Parameters.CategoricalEncodingScheme.SortByResponse
+    };
+  }
 }

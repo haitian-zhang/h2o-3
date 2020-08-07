@@ -23,7 +23,7 @@ import static hex.genmodel.GenModel.Kmeans_preprocessData;
  * http://theory.stanford.edu/~sergei/papers/vldb12-kmpar.pdf<br>
  * http://www.youtube.com/watch?v=cigXAxV3XcY
  */
-public class KMeans extends ClusteringModelBuilder<KMeansModel,KMeansModel.KMeansParameters,KMeansModel.KMeansOutput> {
+public class KMeans extends ClusteringModelBuilder<KMeansModel,KMeansModel.KMeansParameters,KMeansModel.KMeansOutput> implements CategoricalEncodingSupport {
   @Override public ToEigenVec getToEigenVec() { return LinearAlgebraUtils.toEigen; }
   // Convergence tolerance
   final static private double TOLERANCE = 1e-4;
@@ -105,6 +105,9 @@ public class KMeans extends ClusteringModelBuilder<KMeansModel,KMeansModel.KMean
     }
     if(_parms._fold_assignment == Model.Parameters.FoldAssignmentScheme.Stratified){
       error("fold_assignment", "K-means is an unsupervised algorithm; the stratified fold assignment cannot be used because of the missing response column.");
+    }
+    if (!Arrays.stream(supportedCategoricalEncodingSchemes()).anyMatch(_parms._categorical_encoding::equals)) {
+      error("_categorical_encoding", _parms._categorical_encoding + " is not supported for K-Means.");
     }
     if (expensive && error_count() == 0) checkMemoryFootPrint();
   }
@@ -1184,6 +1187,17 @@ public class KMeans extends ClusteringModelBuilder<KMeansModel,KMeansModel.KMean
       }
       ArrayUtils.add(_size, mr._size);
     }
+  }
+
+  public Model.Parameters.CategoricalEncodingScheme[] supportedCategoricalEncodingSchemes() {
+    return new Model.Parameters.CategoricalEncodingScheme[] {
+            Model.Parameters.CategoricalEncodingScheme.AUTO,
+            Model.Parameters.CategoricalEncodingScheme.Enum,
+            Model.Parameters.CategoricalEncodingScheme.OneHotExplicit,
+            Model.Parameters.CategoricalEncodingScheme.Binary,
+            Model.Parameters.CategoricalEncodingScheme.Eigen,
+            Model.Parameters.CategoricalEncodingScheme.LabelEncoder
+    };
   }
 }
 

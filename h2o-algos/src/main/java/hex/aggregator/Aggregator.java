@@ -13,7 +13,7 @@ import water.util.Log;
 
 import java.util.Arrays;
 
-public class Aggregator extends ModelBuilder<AggregatorModel,AggregatorModel.AggregatorParameters,AggregatorModel.AggregatorOutput> {
+public class Aggregator extends ModelBuilder<AggregatorModel,AggregatorModel.AggregatorParameters,AggregatorModel.AggregatorOutput> implements CategoricalEncodingSupport {
 
   @Override
   public ToEigenVec getToEigenVec() {
@@ -110,6 +110,9 @@ public class Aggregator extends ModelBuilder<AggregatorModel,AggregatorModel.Agg
     }
     if (_parms._rel_tol_num_exemplars <= 0 || _parms._rel_tol_num_exemplars>=1) {
       error("_rel_tol_num_exemplars", "rel_tol_num_exemplars must be inside 0...1.");
+    }
+    if (!Arrays.stream(supportedCategoricalEncodingSchemes()).anyMatch(_parms._categorical_encoding::equals)) {
+      error("_categorical_encoding", _parms._categorical_encoding + " is not supported for Aggregator.");
     }
     super.init(expensive);
     if (error_count() > 0)
@@ -480,5 +483,16 @@ public class Aggregator extends ModelBuilder<AggregatorModel,AggregatorModel.Agg
       }
 
     }
+  }
+
+  public Model.Parameters.CategoricalEncodingScheme[] supportedCategoricalEncodingSchemes() {
+    return new Model.Parameters.CategoricalEncodingScheme[] {
+            Model.Parameters.CategoricalEncodingScheme.AUTO,
+            Model.Parameters.CategoricalEncodingScheme.OneHotInternal,
+            Model.Parameters.CategoricalEncodingScheme.Binary,
+            Model.Parameters.CategoricalEncodingScheme.Eigen,
+            Model.Parameters.CategoricalEncodingScheme.LabelEncoder,
+            Model.Parameters.CategoricalEncodingScheme.EnumLimited
+    };
   }
 }

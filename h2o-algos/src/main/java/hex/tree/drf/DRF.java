@@ -1,5 +1,7 @@
 package hex.tree.drf;
 
+import hex.CategoricalEncodingSupport;
+import hex.Model;
 import hex.ModelCategory;
 import hex.genmodel.utils.DistributionFamily;
 import hex.tree.*;
@@ -13,6 +15,7 @@ import water.fvec.C0DChunk;
 import water.fvec.Chunk;
 import water.fvec.Frame;
 
+import java.util.Arrays;
 import java.util.Random;
 
 import static hex.genmodel.GenModel.getPrediction;
@@ -21,7 +24,7 @@ import static hex.tree.drf.TreeMeasuresCollector.asVotes;
 
 /** Distributed Random Forest
  */
-public class DRF extends SharedTree<hex.tree.drf.DRFModel, hex.tree.drf.DRFModel.DRFParameters, hex.tree.drf.DRFModel.DRFOutput> {
+public class DRF extends SharedTree<hex.tree.drf.DRFModel, hex.tree.drf.DRFModel.DRFParameters, hex.tree.drf.DRFModel.DRFOutput> implements CategoricalEncodingSupport {
   private static final double ONEBOUND=1+1e-12;    // due to fixed precision
   private static final double ZEROBOUND=-1e-12;    // due to fixed precision
   @Override public ModelCategory[] can_build() {
@@ -71,6 +74,9 @@ public class DRF extends SharedTree<hex.tree.drf.DRFModel, hex.tree.drf.DRFModel
       warn("_sample_rate", "Sample rate is 100% and no validation dataset and no cross-validation. There are no out-of-bag data to compute error estimates on the training data!");
     if (hasOffsetCol())
       error("_offset_column", "Offsets are not yet supported for DRF.");
+    if (!Arrays.stream(supportedCategoricalEncodingSchemes()).anyMatch(_parms._categorical_encoding::equals)) {
+      error("_categorical_encoding", _parms._categorical_encoding + " is not supported for DRF.");
+    }
   }
 
   // ----------------------
@@ -353,5 +359,16 @@ public class DRF extends SharedTree<hex.tree.drf.DRFModel, hex.tree.drf.DRFModel
     return sum;
   }
 
-
+  public Model.Parameters.CategoricalEncodingScheme[] supportedCategoricalEncodingSchemes() {
+    return new Model.Parameters.CategoricalEncodingScheme[] {
+            Model.Parameters.CategoricalEncodingScheme.AUTO,
+            Model.Parameters.CategoricalEncodingScheme.Enum,
+            Model.Parameters.CategoricalEncodingScheme.EnumLimited,
+            Model.Parameters.CategoricalEncodingScheme.OneHotExplicit,
+            Model.Parameters.CategoricalEncodingScheme.Binary,
+            Model.Parameters.CategoricalEncodingScheme.Eigen,
+            Model.Parameters.CategoricalEncodingScheme.LabelEncoder,
+            Model.Parameters.CategoricalEncodingScheme.SortByResponse
+    };
+  }
 }

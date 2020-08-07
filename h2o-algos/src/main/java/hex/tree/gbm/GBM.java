@@ -1,10 +1,7 @@
 package hex.tree.gbm;
 
-import hex.DistributionFactory;
-import hex.Model;
+import hex.*;
 import hex.genmodel.utils.DistributionFamily;
-import hex.Distribution;
-import hex.ModelCategory;
 import hex.quantile.Quantile;
 import hex.quantile.QuantileModel;
 import hex.tree.*;
@@ -27,7 +24,7 @@ import static hex.util.LinearAlgebraUtils.toEigenArray;
  *
  *  Based on "Elements of Statistical Learning, Second Edition, page 387"
  */
-public class GBM extends SharedTree<GBMModel,GBMModel.GBMParameters,GBMModel.GBMOutput> {
+public class GBM extends SharedTree<GBMModel,GBMModel.GBMParameters,GBMModel.GBMOutput> implements CategoricalEncodingSupport {
   @Override public ModelCategory[] can_build() {
     return new ModelCategory[]{
       ModelCategory.Regression,
@@ -181,6 +178,9 @@ public class GBM extends SharedTree<GBMModel,GBMModel.GBMParameters,GBMModel.GBM
 
     if ((_train != null) && (_parms._monotone_constraints != null)) {
       TreeUtils.checkMonotoneConstraints(this, _train, _parms._monotone_constraints);
+    }
+    if (!Arrays.stream(supportedCategoricalEncodingSchemes()).anyMatch(_parms._categorical_encoding::equals)) {
+      error("_categorical_encoding", _parms._categorical_encoding + " is not supported for GBM.");
     }
   }
 
@@ -1289,4 +1289,16 @@ public class GBM extends SharedTree<GBMModel,GBMModel.GBMParameters,GBMModel.GBM
     }
   }
 
+  public Model.Parameters.CategoricalEncodingScheme[] supportedCategoricalEncodingSchemes() {
+    return new Model.Parameters.CategoricalEncodingScheme[] {
+            Model.Parameters.CategoricalEncodingScheme.AUTO,
+            Model.Parameters.CategoricalEncodingScheme.Enum,
+            Model.Parameters.CategoricalEncodingScheme.EnumLimited,
+            Model.Parameters.CategoricalEncodingScheme.OneHotExplicit,
+            Model.Parameters.CategoricalEncodingScheme.Binary,
+            Model.Parameters.CategoricalEncodingScheme.Eigen,
+            Model.Parameters.CategoricalEncodingScheme.LabelEncoder,
+            Model.Parameters.CategoricalEncodingScheme.SortByResponse
+    };
+  }
 }

@@ -32,10 +32,7 @@ import water.util.Timer;
 import water.util.TwoDimTable;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static hex.tree.SharedTree.createModelSummaryTable;
 import static hex.tree.SharedTree.createScoringHistoryTable;
@@ -46,7 +43,7 @@ import static water.H2O.technote;
  *  Based on "Elements of Statistical Learning, Second Edition, page 387"
  */
 public class XGBoost extends ModelBuilder<XGBoostModel,XGBoostModel.XGBoostParameters,XGBoostOutput> 
-    implements PlattScalingHelper.ModelBuilderWithCalibration<XGBoostModel, XGBoostModel.XGBoostParameters, XGBoostOutput> {
+    implements PlattScalingHelper.ModelBuilderWithCalibration<XGBoostModel, XGBoostModel.XGBoostParameters, XGBoostOutput>, CategoricalEncodingSupport {
 
   private static final Logger LOG = Logger.getLogger(XGBoost.class);
   
@@ -189,6 +186,9 @@ public class XGBoost extends ModelBuilder<XGBoostModel,XGBoostModel.XGBoostParam
 
     if (_parms._distribution == DistributionFamily.quasibinomial)
       error("_distribution", "Quasibinomial is not supported for XGBoost in current H2O.");
+
+    if (!Arrays.stream(supportedCategoricalEncodingSchemes()).anyMatch(_parms._categorical_encoding::equals))
+      error("_categorical_encoding", _parms._categorical_encoding + " is not supported for XGBoost.");
 
     switch( _parms._distribution) {
       case bernoulli:
@@ -722,4 +722,17 @@ public class XGBoost extends ModelBuilder<XGBoostModel,XGBoostModel.XGBoostParam
     warn("_max_runtime_secs", "Disabling maximum allowed runtime for cross-validation main model.");
   }
 
+  @Override
+  public Model.Parameters.CategoricalEncodingScheme[] supportedCategoricalEncodingSchemes() {
+    return new Model.Parameters.CategoricalEncodingScheme[] {
+            Model.Parameters.CategoricalEncodingScheme.AUTO,
+            Model.Parameters.CategoricalEncodingScheme.OneHotInternal,
+            Model.Parameters.CategoricalEncodingScheme.OneHotExplicit,
+            Model.Parameters.CategoricalEncodingScheme.Binary,
+            Model.Parameters.CategoricalEncodingScheme.Eigen,
+            Model.Parameters.CategoricalEncodingScheme.LabelEncoder,
+            Model.Parameters.CategoricalEncodingScheme.SortByResponse,
+            Model.Parameters.CategoricalEncodingScheme.EnumLimited
+    };
+  }
 }
