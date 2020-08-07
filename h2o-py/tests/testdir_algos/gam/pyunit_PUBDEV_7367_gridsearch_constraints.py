@@ -27,8 +27,7 @@ class test_gam_gridsearch_specific:
                              'gam_columns': [["C11", "C12", "C13"]]},
                             {'scale': [[1, 1], [2, 2]],
                              'num_knots': [[5, 5], [6, 6]],
-                             'gam_columns': [["C11", "C12"], ["C12", "C13"]]},
-                            {'lambda_search': True, 'nlambdas': [5, 10, 15], 'gam_columns': [["C11", "C12", "C13"]]}]}
+                             'gam_columns': [["C11", "C12"], ["C12", "C13"]]}]}
     manual_gam_models = []
     h2o_model = []
     num_grid_models = 0

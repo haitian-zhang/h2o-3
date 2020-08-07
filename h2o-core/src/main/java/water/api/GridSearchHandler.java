@@ -37,6 +37,8 @@ public class GridSearchHandler<G extends Grid<MP>,
     S extends GridSearchSchema<G, S, MP, P>,
     MP extends Model.Parameters,
     P extends ModelParametersSchemaV3> extends Handler {
+    
+  public static final String CONSTRAINTS = "constraints";
 
   // Invoke the handler with parameters.  Can throw any exception the called handler can throw.
   // TODO: why does this do its own params filling?
@@ -140,11 +142,11 @@ public class GridSearchHandler<G extends Grid<MP>,
           break;
         }
       }
-      if (fieldMetadata == null && !hparam.getKey().equals("constraints")) {
+      if (fieldMetadata == null && !hparam.getKey().equals(CONSTRAINTS)) {
         throw new H2OIllegalArgumentException(hparam.getKey(), "grid",
                                               "Unknown hyper parameter for grid search!");
       }
-      if (!hparam.getKey().equals("constraints") && !fieldMetadata.is_gridable) {
+      if (!hparam.getKey().equals(CONSTRAINTS) && !fieldMetadata.is_gridable) {
         throw new H2OIllegalArgumentException(hparam.getKey(), "grid",
                                               "Illegal hyper parameter for grid search! The parameter '"
                                               + fieldMetadata.name + " is not gridable!");

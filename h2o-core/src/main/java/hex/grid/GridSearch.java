@@ -7,6 +7,7 @@ import water.*;
 import water.exceptions.H2OConcurrentModificationException;
 import water.exceptions.H2OIllegalArgumentException;
 import water.fvec.Frame;
+import water.util.ArrayUtils;
 import water.util.Log;
 import water.util.PojoUtils;
 
@@ -70,6 +71,7 @@ public final class GridSearch<MP extends Model.Parameters> extends Keyed<GridSea
   public final Key<Grid> _result;
   public final Job<Grid> _job;
   public final int _parallelism;
+  public static final String CONSTRAINTS = "constraints";
 
   /** Walks hyper space and for each point produces model parameters. It is
    *  used only locally to fire new model builders.  */
@@ -110,15 +112,7 @@ public final class GridSearch<MP extends Model.Parameters> extends Keyed<GridSea
       String[] allHyperNames = hyperNames;
       String[] hyperParamNamesConstraint = _hyperSpaceWalker.getHyperParamNamesConstraint();
       if (hyperParamNamesConstraint.length > 0) {
-        allHyperNames = new String[hyperParamNamesConstraint.length+hyperNames.length-1];
-        // gather all hyperparameter names into allHyperNames for TwoDimTable summary
-        System.arraycopy(hyperParamNamesConstraint, 0, allHyperNames, 0, hyperParamNamesConstraint.length);
-        int countIndex = hyperParamNamesConstraint.length;
-        for (int index=0; index < hyperNames.length; index++) {
-          if (!hyperNames[index].equals("constraints")) {
-            allHyperNames[countIndex++] = hyperNames[index];
-          }
-        }
+        allHyperNames = ArrayUtils.append(ArrayUtils.remove(hyperNames, CONSTRAINTS), hyperParamNamesConstraint);
       }
       grid = new Grid<>(_result,
                       _hyperSpaceWalker.getParams(),

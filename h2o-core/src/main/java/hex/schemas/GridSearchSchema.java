@@ -11,7 +11,6 @@ import water.api.schemas3.ModelParametersSchemaV3;
 import water.api.schemas3.SchemaV3;
 import water.exceptions.H2OIllegalArgumentException;
 import water.util.IcedHashMap;
-import water.util.JSONUtils;
 
 import java.util.*;
 
