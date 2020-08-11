@@ -7,6 +7,7 @@ import water.*;
 import water.exceptions.H2OConcurrentModificationException;
 import water.exceptions.H2OIllegalArgumentException;
 import water.fvec.Frame;
+import water.util.ArrayUtils;
 import water.util.Log;
 import water.util.PojoUtils;
 
@@ -70,6 +71,7 @@ public final class GridSearch<MP extends Model.Parameters> extends Keyed<GridSea
   public final Key<Grid> _result;
   public final Job<Grid> _job;
   public final int _parallelism;
+  public static final String CONSTRAINTS = "constraints";
 
   /** Walks hyper space and for each point produces model parameters. It is
    *  used only locally to fire new model builders.  */
@@ -106,9 +108,15 @@ public final class GridSearch<MP extends Model.Parameters> extends Keyed<GridSea
         throw new H2OIllegalArgumentException("training_frame", "grid", "Cannot append new models to a grid with different training input");
       grid.write_lock(_job);
     } else {
+      String[] hyperNames = _hyperSpaceWalker.getHyperParamNames();
+      String[] allHyperNames = hyperNames;
+      String[] hyperParamNamesConstraint = _hyperSpaceWalker.getHyperParamNamesConstraint();
+      if (hyperParamNamesConstraint.length > 0) {
+        allHyperNames = ArrayUtils.append(ArrayUtils.remove(hyperNames, CONSTRAINTS), hyperParamNamesConstraint);
+      }
       grid = new Grid<>(_result,
                       _hyperSpaceWalker.getParams(),
-                      _hyperSpaceWalker.getHyperParamNames(),
+                      allHyperNames,
                       _hyperSpaceWalker.getParametersBuilderFactory().getFieldNamingStrategy());
       grid.delete_and_lock(_job);
     }

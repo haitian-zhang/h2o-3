@@ -12,9 +12,7 @@ import water.api.schemas3.SchemaV3;
 import water.exceptions.H2OIllegalArgumentException;
 import water.util.IcedHashMap;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * This is a common grid search schema composed of two parameters: default parameters for a builder
@@ -85,6 +83,7 @@ public class GridSearchSchema<G extends Grid<MP>,
 
     if( parms.containsKey("search_criteria") ) {
       Properties p;
+      
       try {
         p = water.util.JSONUtils.parseToProperties(parms.getProperty("search_criteria"));
 
@@ -107,7 +106,7 @@ public class GridSearchSchema<G extends Grid<MP>,
         } else {
           throw new H2OIllegalArgumentException("search_criteria.strategy", strategy);
         }
-
+        
         search_criteria.fillWithDefaults();
         search_criteria.fillFromParms(p);
       }
