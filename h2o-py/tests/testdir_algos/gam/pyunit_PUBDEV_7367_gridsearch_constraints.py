@@ -21,7 +21,7 @@ class test_gam_gridsearch_specific:
     search_criteria = {'strategy': 'Cartesian'}
     hyper_parameters = {'alpha': [0.9, 0.01],
                         'constraints': [
-                            {'lambda_search': True, 'nlambdas': [5, 10, 15], 'gam_columns': [["C11", "C12", "C13"]]},
+                            {'lambda_search': [True], 'nlambdas': [5, 10, 15], 'gam_columns': [["C11", "C12", "C13"]]},
                             {'scale': [[1, 1, 1], [2, 2, 2]],
                              'num_knots': [[5, 5, 5], [5, 6, 7]],
                              'gam_columns': [["C11", "C12", "C13"]]},
@@ -31,7 +31,7 @@ class test_gam_gridsearch_specific:
     manual_gam_models = []
     h2o_model = []
     num_grid_models = 0
-    num_expected_models = 36
+    num_expected_models = 30
 
     def __init__(self):
         self.setup_data()
@@ -61,10 +61,6 @@ class test_gam_gridsearch_specific:
                                                                                           ))
         for alpha in self.hyper_parameters["alpha"]:
             for nlambda in self.hyper_parameters["constraints"][0]["nlambdas"]:
-                self.manual_gam_models.append(H2OGeneralizedAdditiveEstimator(family="gaussian", keep_gam_cols=True, alpha=alpha,
-                                                                              lambda_search=True, nlambdas=nlambda,
-                                                                              gam_columns=["C11", "C12", "C13"]))
-            for nlambda in self.hyper_parameters["constraints"][3]["nlambdas"]:
                 self.manual_gam_models.append(H2OGeneralizedAdditiveEstimator(family="gaussian", keep_gam_cols=True, alpha=alpha,
                                                                               lambda_search=True, nlambdas=nlambda,
                                                                               gam_columns=["C11", "C12", "C13"]))
