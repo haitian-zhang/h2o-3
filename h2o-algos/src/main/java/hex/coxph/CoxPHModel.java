@@ -254,8 +254,8 @@ public class CoxPHModel extends Model<CoxPHModel,CoxPHParameters,CoxPHOutput> {
   }
 
   @Override
-  public ModelMetrics.MetricBuilder makeMetricBuilder(String[] domain) {
-    return new ModelMetricsRegression.MetricBuilderRegression();
+  public ModelMetricsRegressionCoxPH.MetricBuilderRegressionCoxPH makeMetricBuilder(String[] domain) {
+    return new ModelMetricsRegressionCoxPH.MetricBuilderRegressionCoxPH();
   }
 
   public ModelSchemaV3 schema() { return new CoxPHModelV3(); }
@@ -277,6 +277,13 @@ public class CoxPHModel extends Model<CoxPHModel,CoxPHParameters,CoxPHOutput> {
     final Frame scored = score
                          .doAll(Vec.T_NUM, scoringInfo._adaptedFrame)
                          .outputFrame(Key.<Frame>make(destination_key), new String[]{"lp"}, null);
+    
+//    if (computeMetrics) {
+
+    
+    ModelMetricsRegressionCoxPH mm = makeMetricBuilder(null).makeModelMetrics(this, fr, adaptFrm, null);
+    this.addModelMetrics(mm);
+//    }
 
     concordance(fr, adaptFrm, scored);
 

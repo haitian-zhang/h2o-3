@@ -1,9 +1,7 @@
 setwd(normalizePath(dirname(R.utils::commandArgs(asValues=TRUE)$"f")))
 source("../../../scripts/h2o-r-test-setup.R")
 
-
-
-test.CoxPH.predict <- function() {
+test.CoxPH.concordance <- function() {
     pred <- function(model, data) {
         hex.lp <- h2o.predict(model, data)
         lp <- as.data.frame(hex.lp)$lp
@@ -41,4 +39,4 @@ test.CoxPH.predict <- function() {
     expect_equal(rConcordance, hexConcordance)
 }
 
-doTest("CoxPH: Predict Test", test.CoxPH.predict)
+doTest("CoxPH: Predict Test", test.CoxPH.concordance)

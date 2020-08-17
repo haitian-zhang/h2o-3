@@ -1,27 +1,55 @@
 setwd(normalizePath(dirname(R.utils::commandArgs(asValues=TRUE)$"f")))
 source("../../../scripts/h2o-r-test-setup.R")
 
-
-
 test.CoxPH.predict <- function() {
-    pred <- function(model, data) {
-        hex.lp <- h2o.predict(model, data)
-        lp <- as.data.frame(hex.lp)$lp
-        lp[!is.na(lp)]
+
+    pred.r <- function(fit, tstdata) {
+        fit.pred <- predict(fit, tstdata, type = "lp")
+        names(fit.pred) <- NULL
+        return(fit.pred)
     }
-    
-    check.pred <- function (rModel, hexModel, heart.hex) {
-        rPredictor <- rModel$linear.predictors
-        hexPredictor <- pred(hexModel, heart.hex)
-        
-        expect_equal(rPredictor, hexPredictor, scale = 1, tolerance = 1e-3)
+
+    pred.h2o <- function(model, data) {
+        hex.lp <- h2o.predict(model, data)
+        as.data.frame(hex.lp)$lp
+    }
+
+    check.pred <- function(r.model, hex.model, r.tstdata, hex.tstdata) {
+        fit.pred <- pred.r(r.model, r.tstdata)
+        hex.lp <- pred.h2o(hex.model, hex.tstdata)
+        expect_equal(fit.pred, hex.lp, tolerance = 1e-7, scale = 1)
     }
     
     check.concordance <- function (rModel, hexModel) {
+
+
         rConcordance <- unname(summary(rModel)$concordance)[1]
-        hexConcordance <- hexModel@model$concordance
         
-        expect_equal(rConcordance, hexConcordance, tolerance = 1e-5)
+        print("class: ")
+        print(class(hexModel))
+        print("slots: ")
+        print(getSlots(class(hexModel)))
+        print("model names: ")
+        print(names(hexModel@model))
+        print("--------------------------------")
+        print("class metrics: ")
+        print(class(hexModel@model$training_metrics))
+        
+        print("...........................")
+        print("slots metrics: ")
+        print(getSlots(class(hexModel@model$training_metrics)))
+        print("...........................")
+        
+        print("class metrics metrics: ")
+        print(class(hexModel@model$training_metrics@metrics))
+
+        print("metrics metrics: ")
+        print(hexModel@model$training_metrics@metrics)
+
+          hexConcordance <- hexModel@model$training_metrics@metrics$concordance
+
+         expect_equal(rConcordance, hexConcordance, tolerance = 1e-5)
+         exit(0)
     }
 
     heart.hex <- h2o.importFile(locate("smalldata/coxph_test/heart.csv"))
@@ -37,7 +65,16 @@ test.CoxPH.predict <- function() {
                           stop_column="stop", training_frame=heart.hex, ties="breslow")
     rModel <- survival::coxph(Surv(stop, event) ~ age, data = heart.df, ties="breslow")
 
-    check.pred(rModel, hexModel, heart.hex)
+    check.pred(rModel, hexModel, heart.df, heart.hex)
+    check.concordance(rModel, hexModel)
+    
+    # with start column
+
+    hexModel <- h2o.coxph(x="age", event_column="event",
+                          start_column="start", stop_column="stop", training_frame=heart.hex, ties="breslow")
+    rModel <- survival::coxph(Surv(start, stop, event) ~ age, data = heart.df, ties="breslow")
+
+    check.pred(rModel, hexModel, heart.df, heart.hex)
     check.concordance(rModel, hexModel)
     
     # with multiple columns
@@ -46,10 +83,10 @@ test.CoxPH.predict <- function() {
                           stop_column="stop", training_frame=heart.hex, ties="breslow")
     rModel <- survival::coxph(Surv(stop, event) ~ age  + year + surgery + transplant, data = heart.df, ties="breslow")
 
-    check.pred(rModel, hexModel, heart.hex)
+    check.pred(rModel, hexModel, heart.df, heart.hex)
     check.concordance(rModel, hexModel)
     
-    # with multiple columns and interactions
+#   # with multiple columns and interactions
 
     hexModel <- h2o.coxph(x=c("age", "year", "surgery", "transplant" ), event_column="event",
                           stop_column="stop", training_frame=heart.hex, ties="breslow",
@@ -57,44 +94,41 @@ test.CoxPH.predict <- function() {
     rModel <- survival::coxph(Surv(stop, event) ~ age  + year + surgery + transplant + year:surgery + transplant:surgery, 
                               data = heart.df, ties="breslow")
 
-    check.pred(rModel, hexModel, heart.hex)
+    check.pred(rModel, hexModel, heart.df, heart.hex)
     check.concordance(rModel, hexModel)
     
     # with multiple columns and interactions and stratification
 
-    hexModel <- h2o.coxph(x=c("age", "year", "surgery", "transplant" ), event_column="event",
-                          stop_column="stop", training_frame=heart.hex, ties="breslow",
-                          interaction_pairs=list(c("transplant", "surgery"), c("year", "surgery") ),
-                          stratify_by=c("surgery"))
+    hexModel <- h2o.coxph(x=c("age", "year", "transplant"), event_column="event",
+                          stop_column="stop", training_frame=heart.hex, ties="efron",
+                          interaction_pairs=list(c("year", "transplant")), stratify_by = "surgery")
+    rModel <- survival::coxph(Surv(stop, event) ~ age + year + transplant + year:transplant + strata(surgery), 
+                              data = heart.df, ties="efron")
 
-    rModel <- survival::coxph(Surv(stop, event) ~ age + year  + transplant + year:surgery + transplant:surgery + strata(surgery), 
-                              data = heart.df, ties="breslow")
-
-    check.pred(rModel, hexModel, heart.hex)
+    check.pred(rModel, hexModel, heart.df, heart.hex)
     check.concordance(rModel, hexModel)
-
+    
     # with multiple columns and interactions and multiple stratification
+    
+    hexModel <- h2o.coxph(x=c("age", "year", "transplant"), event_column="event",
+                          stop_column="stop", training_frame=heart.hex, ties="efron",
+                          interaction_pairs=list(c("year", "transplant")), stratify_by = c("surgery", "transplant"))
+    rModel <- survival::coxph(Surv(stop, event) ~ age + year + transplant + year:transplant + strata(surgery) + strata(transplant),
+                              data = heart.df, ties="efron")
 
-    hexModel <- h2o.coxph(x=c("age", "year", "surgery", "transplant" ), event_column="event",
-                          stop_column="stop", training_frame=heart.hex, ties="breslow",
-                          interaction_pairs=list(c("year", "surgery") ),
-                          stratify_by=c("surgery", "transplant"))
+    check.pred(rModel, hexModel, heart.df, heart.hex)
+    check.concordance(rModel, hexModel)   
+    
+    # with multiple columns and interactions and multiple stratification... and a start column
+    
+    hexModel <- h2o.coxph(x=c("age", "year", "transplant"), event_column="event",
+                          stop_column="stop", start_column="start", training_frame=heart.hex, ties="efron",
+                          interaction_pairs=list(c("year", "transplant")), stratify_by = c("surgery", "transplant"))
+    rModel <- survival::coxph(Surv(start, stop, event) ~ age + year + transplant + year:transplant + strata(surgery) + strata(transplant),
+                              data = heart.df, ties="efron")
 
-    rModel <- survival::coxph(Surv(stop, event) ~ age + year  + transplant + year:surgery + strata(surgery) + strata(transplant), 
-                              data = heart.df, ties="breslow")
-
-    check.pred(rModel, hexModel, heart.hex)
-    check.concordance(rModel, hexModel)
-
-    ## with start column
-    #
-    #hexModel <- h2o.coxph(x="age", event_column="event", start_column="start", 
-    #                      stop_column="stop", training_frame=heart.hex)
-    #rModel <- survival::coxph(Surv(start, stop, event) ~ age, data = heart.df)
-    #
-    #
-    #check.pred(rModel, hexModel, heart.hex)
-    #check.concordance(rModel, hexModel)
+    check.pred(rModel, hexModel, heart.df, heart.hex)
+    check.concordance(rModel, hexModel)   
 }
 
 doTest("CoxPH: Predict Test", test.CoxPH.predict)
